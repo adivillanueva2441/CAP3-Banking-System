@@ -1,11 +1,11 @@
-package com.example.banking.system.dto;
+package com.example.banking.system.dto.response;
 
 import com.example.banking.system.model.Account;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public class AccountResponseDto {
+public class AccountResponseDTO {
 
     private Long id;
     private Long userId;
@@ -20,7 +20,7 @@ public class AccountResponseDto {
     private String lastName;
     private String username;
 
-    public AccountResponseDto(Account account) {
+    public AccountResponseDTO(Account account) {
         this.id = account.getId();
         this.userId = account.getUser().getId();
         this.accountNumber = account.getAccountNumber();

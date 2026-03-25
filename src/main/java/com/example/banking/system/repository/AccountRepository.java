@@ -11,4 +11,6 @@ public interface AccountRepository extends JpaRepository<Account,Long> {
 
     //Retrieves all account types bound to the user.
     List<Account> findByUserId(Long id);
+
+    boolean existsByAccountNumber(String accountNumber);
 }

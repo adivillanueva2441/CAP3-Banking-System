@@ -1,9 +1,10 @@
 package com.example.banking.system.controller;
 
-import com.example.banking.system.dto.AccountResponseDto;
+import com.example.banking.system.dto.response.AccountResponseDTO;
 import com.example.banking.system.service.IAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,33 +15,36 @@ public class AccountController {
     @Autowired
     private IAccountService accountService;
 
-    //API call to retrieve all accounts of all users
+    //API call for ADMIN to retrieve all accounts of all users
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<List<AccountResponseDto>> getAllAccounts() {
+    public ResponseEntity<List<AccountResponseDTO>> getAllAccounts() {
         return ResponseEntity.ok(accountService.getAllAccounts());
     }
 
     //API call to retrieve information of a specific account
     @GetMapping("/{id}")
-    public ResponseEntity<AccountResponseDto> getAccountById(@PathVariable Long id) {
+    public ResponseEntity<AccountResponseDTO> getAccountById(@PathVariable Long id) {
         return ResponseEntity.ok(accountService.getAccountById(id));
     }
 
     //API call to retrieve all accounts of a specific user
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<AccountResponseDto>> getAllAccountsByUserId(@PathVariable Long userId) {
+    public ResponseEntity<List<AccountResponseDTO>> getAllAccountsByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(accountService.getAllAccountsByUserId(userId));
     }
 
-    //API call to activate an account
+    //API call for ADMIN to activate an account
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/activate")
-    public ResponseEntity<AccountResponseDto> activateAccount(@PathVariable Long id) {
+    public ResponseEntity<AccountResponseDTO> activateAccount(@PathVariable Long id) {
         return ResponseEntity.ok(accountService.activateAccount(id));
     }
 
-    //API call to deactivate an account
+    //API call for ADMIN to deactivate an account
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/deactivate")
-    public ResponseEntity<AccountResponseDto> deactivateAccount(@PathVariable Long id) {
+    public ResponseEntity<AccountResponseDTO> deactivateAccount(@PathVariable Long id) {
         return ResponseEntity.ok(accountService.deactivateAccount(id));
     }
 }
