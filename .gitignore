@@ -43,4 +43,7 @@ dist/
 
 application-local.properties
 application-secret.properties
+# Ignore real properties file
+src/main/resources/application.properties
+
 *.env
