@@ -3,6 +3,9 @@ package com.example.banking.system.service.impl;
 import com.example.banking.system.dto.request.TransactionRequestDTO;
 import com.example.banking.system.dto.response.AccountResponseDTO;
 import com.example.banking.system.dto.response.TransactionResponseDTO;
+import com.example.banking.system.exception.BadRequestException;
+import com.example.banking.system.exception.ResourceNotFoundException;
+import com.example.banking.system.exception.UnauthorizedException;
 import com.example.banking.system.model.Account;
 import com.example.banking.system.model.Transaction;
 import com.example.banking.system.model.enums.Status;
@@ -33,6 +36,9 @@ public class TransactionServiceImpl implements ITransactionService {
     @Autowired
     private AccountRepository accountRepository;
 
+    @Autowired
+    private MessageHandlerService messageHandlerService;
+
     @Override
     @Transactional
     public TransactionResponseDTO transfer(TransactionRequestDTO request) {
@@ -41,34 +47,34 @@ public class TransactionServiceImpl implements ITransactionService {
 
         // Fetch sender and receiver accounts
         Account senderAccount = accountRepository.findByAccountNumber(request.getSenderAccountNumber())
-                .orElseThrow(() -> new RuntimeException("Sender account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(messageHandlerService.get("error.sender_account.not_found")));
 
         Account receiverAccount = accountRepository.findByAccountNumber(request.getReceiverAccountNumber())
-                .orElseThrow(() -> new RuntimeException("Receiver account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(messageHandlerService.get("error.receiver_account.not_found")));
 
         // Ensure sender owns this account
         if (!senderAccount.getUser().getUsername().equals(currentUsername)) {
-            throw new RuntimeException("You are not authorized to transfer from this account");
+            throw new UnauthorizedException(messageHandlerService.get("error.unauthorized"));
         }
 
         // Ensure both accounts are active
         if (senderAccount.getStatus() != Status.ACTIVE) {
-            throw new RuntimeException("Sender account is inactive");
+            throw new BadRequestException(messageHandlerService.get("error.sender_account.inactive"));
         }
         if (receiverAccount.getStatus() != Status.ACTIVE) {
-            throw new RuntimeException("Receiver account is inactive");
+            throw new BadRequestException(messageHandlerService.get("error.receiver_account.inactive"));
         }
 
         // Ensure sender is not transferring to themselves
         if (senderAccount.getAccountNumber().equals(receiverAccount.getAccountNumber())) {
-            throw new RuntimeException("Cannot transfer to the same account");
+            throw new BadRequestException(messageHandlerService.get("error.transfer.same_account"));
         }
 
         BigDecimal totalDeducted = request.getAmount().add(TRANSACTION_FEE);
 
         // Ensure sender has enough balance
         if (senderAccount.getBalance().compareTo(totalDeducted) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new BadRequestException(messageHandlerService.get("error.insufficient_balance"));
         }
 
         // Build transaction record first as PENDING
@@ -110,11 +116,11 @@ public class TransactionServiceImpl implements ITransactionService {
                 .getAuthentication().getName();
 
         Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(messageHandlerService.get("error.account.not_found")));
 
         // Ensure the account belongs to the current user
         if (!account.getUser().getUsername().equals(currentUsername)) {
-            throw new RuntimeException("You are not authorized to view these transactions");
+            throw new UnauthorizedException(messageHandlerService.get("error.unauthorized"));
         }
 
         // Fetch both sent and received transactions then combine
@@ -156,10 +162,10 @@ public class TransactionServiceImpl implements ITransactionService {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
         Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(messageHandlerService.get("error.account.not_found")));
 
         if (!isAdmin && !account.getUser().getUsername().equals(currentUsername)) {
-            throw new RuntimeException("You are not authorized to view this balance");
+            throw new UnauthorizedException(messageHandlerService.get("error.unauthorized"));
         }
 
         return new AccountResponseDTO(account);
