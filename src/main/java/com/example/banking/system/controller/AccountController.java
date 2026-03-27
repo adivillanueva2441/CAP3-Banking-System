@@ -34,6 +34,13 @@ public class AccountController {
         return ResponseEntity.ok(accountService.getAllAccountsByUserId(userId));
     }
 
+    //API call to retrieve accounts of current user
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<List<AccountResponseDTO>> getMyAccounts() {
+        return ResponseEntity.ok(accountService.getMyAccounts());
+    }
+
     //API call for ADMIN to activate an account
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/activate")

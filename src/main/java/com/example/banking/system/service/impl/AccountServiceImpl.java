@@ -83,6 +83,18 @@ public class AccountServiceImpl implements IAccountService {
         return accounts.stream().map(AccountResponseDTO::new).toList();
     }
 
+    //Retrieves accounts of current user after login
+    @Override
+    public List<AccountResponseDTO> getMyAccounts() {
+        String username = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+        userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(messageHandler.get("error.user.not_found")));
+        List<Account> accounts = accountRepository.findByUserUsername(username);
+        return accounts.stream().map(AccountResponseDTO::new).toList();
+    }
+
 
     //For admin to activate an account
     @Override

@@ -10,5 +10,6 @@ public interface IAccountService {
     List<AccountResponseDTO> getAllAccountsByUserId(Long id);
     AccountResponseDTO activateAccount(Long id);
     AccountResponseDTO deactivateAccount(Long id);
+    List<AccountResponseDTO> getMyAccounts();
 
 }
