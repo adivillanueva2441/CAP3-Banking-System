@@ -6,6 +6,7 @@ import com.example.banking.system.exception.ResourceNotFoundException;
 import com.example.banking.system.exception.UnauthorizedException;
 import com.example.banking.system.model.Account;
 import com.example.banking.system.model.User;
+import com.example.banking.system.model.enums.AccountType;
 import com.example.banking.system.model.enums.Status;
 import com.example.banking.system.repository.AccountRepository;
 import com.example.banking.system.repository.UserRepository;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -118,6 +120,43 @@ public class AccountServiceImpl implements IAccountService {
         account.setStatus(Status.INACTIVE);
         accountRepository.save(account);
         return new AccountResponseDTO(account);
+    }
+
+    @Override
+    public AccountResponseDTO applyForSavingsAccount(){
+        String username = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        User user = userRepository.findByUsername(username).
+                orElseThrow(() -> new ResourceNotFoundException(messageHandler.get("error.user.not_found")));
+
+        // Check if user already has a savings account
+        boolean hasSavings = accountRepository.findByUserUsername(username)
+                .stream()
+                .anyMatch(acc -> acc.getAccountType() == AccountType.SAVINGS);
+
+        if (hasSavings) {
+            throw new BadRequestException(messageHandler.get("error.savings_account.already_exists"));
+        }
+
+        Account account = new Account();
+        account.setUser(user);
+        account.setAccountNumber(generateAccountNumber());
+        account.setAccountType(AccountType.SAVINGS);
+        account.setBalance(BigDecimal.ZERO);
+        account.setStatus(Status.ACTIVE);
+        accountRepository.save(account);
+
+        return new AccountResponseDTO(account);
+    }
+
+    @Override
+    public String generateAccountNumber() {
+        String accountNumber;
+        do {
+            int number = (int) (Math.random() * 900000000) + 100000000;
+            accountNumber = "ACC-" + number;
+        } while (accountRepository.existsByAccountNumber(accountNumber));
+        return accountNumber;
     }
 
 

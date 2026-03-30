@@ -11,5 +11,8 @@ public interface IAccountService {
     AccountResponseDTO activateAccount(Long id);
     AccountResponseDTO deactivateAccount(Long id);
     List<AccountResponseDTO> getMyAccounts();
+    AccountResponseDTO applyForSavingsAccount();
+    String generateAccountNumber();
+
 
 }

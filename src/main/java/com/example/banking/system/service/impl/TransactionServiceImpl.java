@@ -8,11 +8,14 @@ import com.example.banking.system.exception.ResourceNotFoundException;
 import com.example.banking.system.exception.UnauthorizedException;
 import com.example.banking.system.model.Account;
 import com.example.banking.system.model.Transaction;
+import com.example.banking.system.model.User;
+import com.example.banking.system.model.enums.AccountType;
 import com.example.banking.system.model.enums.Status;
 import com.example.banking.system.model.enums.TransactionStatus;
 import com.example.banking.system.model.enums.TransactionType;
 import com.example.banking.system.repository.AccountRepository;
 import com.example.banking.system.repository.TransactionRepository;
+import com.example.banking.system.repository.UserRepository;
 import com.example.banking.system.service.ITransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -29,13 +33,15 @@ public class TransactionServiceImpl implements ITransactionService {
 
     // Flat fee — easy to refactor into admin-configurable later
     private static final BigDecimal TRANSACTION_FEE = new BigDecimal("15.00");
+    private static final BigDecimal MAX_SAVINGS_TRANSFER_AMOUNT = new BigDecimal("50000.00");
+    private static final BigDecimal MAX_SAVINGS_MONTHLY_AMOUNT = new BigDecimal("100000.00");
+    private static final int MAX_SAVINGS_MONTHLY_TRANSACTIONS = 5;
 
     @Autowired
     private TransactionRepository transactionRepository;
 
     @Autowired
     private AccountRepository accountRepository;
-
     @Autowired
     private MessageHandlerService messageHandlerService;
 
@@ -63,6 +69,34 @@ public class TransactionServiceImpl implements ITransactionService {
         }
         if (receiverAccount.getStatus() != Status.ACTIVE) {
             throw new BadRequestException(messageHandlerService.get("error.receiver_account.inactive"));
+        }
+
+        // Enforce savings account restrictions
+        if (senderAccount.getAccountType() == AccountType.SAVINGS) {
+
+            // Check max transfer amount per transaction
+            if (request.getAmount().compareTo(MAX_SAVINGS_TRANSFER_AMOUNT) > 0) {
+                throw new BadRequestException(messageHandlerService.get("error.savings_account.transaction_limit"));
+            }
+
+            // Get current month's transactions
+            LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+            List<Transaction> monthlyTransactions = transactionRepository
+                    .findBySenderAccountIdAndCreatedAtAfter(senderAccount.getId(), startOfMonth);
+
+            // Check max monthly transaction count
+            if (monthlyTransactions.size() >= MAX_SAVINGS_MONTHLY_TRANSACTIONS) {
+                throw new BadRequestException(messageHandlerService.get("error.savings_account.monthly_limit"));
+            }
+
+            // Check max monthly total amount
+            BigDecimal monthlyTotal = monthlyTransactions.stream()
+                    .map(Transaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            if (monthlyTotal.add(request.getAmount()).compareTo(MAX_SAVINGS_MONTHLY_AMOUNT) > 0) {
+                throw new BadRequestException(messageHandlerService.get("error.savings_account.monthly_amount_limit"));
+            }
         }
 
         // Ensure sender is not transferring to themselves
