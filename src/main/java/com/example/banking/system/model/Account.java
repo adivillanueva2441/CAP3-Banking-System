@@ -26,7 +26,7 @@ public class Account {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "account_type", nullable = false)
-    private AccountType accountType = AccountType.SAVINGS;
+    private AccountType accountType = AccountType.CHECKING;
 
     @NotNull(message = "Balance is required")
     @DecimalMin(value = "0.0", message = "Balance cannot be negative")
