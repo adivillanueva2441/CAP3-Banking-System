@@ -6,6 +6,7 @@ import com.example.banking.system.exception.ResourceNotFoundException;
 import com.example.banking.system.exception.UnauthorizedException;
 import com.example.banking.system.model.Account;
 import com.example.banking.system.model.User;
+import com.example.banking.system.model.enums.AuditAction;
 import com.example.banking.system.model.enums.Status;
 import com.example.banking.system.repository.AccountRepository;
 import com.example.banking.system.repository.UserRepository;
@@ -25,6 +26,12 @@ public class AccountServiceImpl implements IAccountService {
     private UserRepository userRepository;
     @Autowired
     private MessageHandlerService messageHandler;
+    @Autowired
+    private AuditLogService auditLogService;
+
+    private String currentUsername() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
 
     // For admin to view all accounts
     @Override
@@ -105,6 +112,15 @@ public class AccountServiceImpl implements IAccountService {
         }
         account.setStatus(Status.ACTIVE);
         accountRepository.save(account);
+
+        auditLogService.logSuccess(
+                currentUsername(),
+                AuditAction.ACCOUNT_ACTIVATED,
+                "Account", id,
+                String.format("Account '%s' status changed: INACTIVE → ACTIVE.",
+                        account.getAccountNumber())
+        );
+
         return new AccountResponseDTO(account);
     }
 
@@ -117,6 +133,15 @@ public class AccountServiceImpl implements IAccountService {
         }
         account.setStatus(Status.INACTIVE);
         accountRepository.save(account);
+
+        auditLogService.logSuccess(
+                currentUsername(),
+                AuditAction.ACCOUNT_DEACTIVATED,
+                "Account", id,
+                String.format("Account '%s' status changed: ACTIVE → INACTIVE.",
+                        account.getAccountNumber())
+        );
+
         return new AccountResponseDTO(account);
     }
 
