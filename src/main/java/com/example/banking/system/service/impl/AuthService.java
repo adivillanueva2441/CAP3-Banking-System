@@ -10,6 +10,8 @@ import com.example.banking.system.model.User;
 import com.example.banking.system.model.enums.Status;
 import com.example.banking.system.repository.AccountRepository;
 import com.example.banking.system.repository.UserRepository;
+import com.example.banking.system.service.IAccountService;
+import com.example.banking.system.service.ITransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,8 +29,12 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
     @Autowired
     private AccountRepository accountRepository;
+
+    @Autowired
+    private IAccountService accountService;
 
     public AuthService(AuthenticationManager authenticationManager, JwtUtil jwtUtil, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
@@ -76,7 +82,7 @@ public class AuthService {
         //Automatically create a savings account for the created user.
         Account account = new Account();
         account.setUser(savedUser);
-        account.setAccountNumber(generateAccountNumber());
+        account.setAccountNumber(accountService.generateAccountNumber());
         account.setBalance(BigDecimal.ZERO);
         account.setStatus(Status.ACTIVE);
         accountRepository.save(account);
@@ -92,14 +98,5 @@ public class AuthService {
         response.setCreatedAt(savedUser.getCreatedAt());
 
         return response;
-    }
-
-    private String generateAccountNumber() {
-        String accountNumber;
-        do {
-            int number = (int) (Math.random() * 900000000) + 100000000;
-            accountNumber = "ACC-" + number;
-        } while (accountRepository.existsByAccountNumber(accountNumber));
-        return accountNumber;
     }
 }

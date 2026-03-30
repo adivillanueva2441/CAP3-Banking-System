@@ -54,4 +54,10 @@ public class AccountController {
     public ResponseEntity<AccountResponseDTO> deactivateAccount(@PathVariable Long id) {
         return ResponseEntity.ok(accountService.deactivateAccount(id));
     }
+
+    @PostMapping("/apply-savings")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<AccountResponseDTO> applyForSavingsAccount() {
+        return ResponseEntity.ok(accountService.applyForSavingsAccount());
+    }
 }
