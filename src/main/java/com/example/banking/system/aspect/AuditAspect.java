@@ -1,6 +1,7 @@
 package com.example.banking.system.aspect;
 
 import com.example.banking.system.dto.request.LoginRequestDTO;
+import com.example.banking.system.exception.InactiveAccountException;
 import com.example.banking.system.model.enums.AuditAction;
 import com.example.banking.system.repository.UserRepository;
 import com.example.banking.system.service.impl.AuditLogService;
@@ -44,6 +45,17 @@ public class AuditAspect {
             );
 
             return result;
+
+        } catch (InactiveAccountException ex) {
+            // User exists but account is inactive
+            auditLogService.logFailed(
+                    username,
+                    AuditAction.LOGIN_FAILED_INACTIVE_ACCOUNT,
+                    "User", null,
+                    "Login attempt failed: account is inactive."
+            );
+            // Rethrow with the clear message — frontend SHOULD see this one
+            throw ex;
 
         } catch (Exception ex) {
             if (!userExists) {

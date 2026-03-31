@@ -5,6 +5,7 @@ import com.example.banking.system.dto.request.LoginRequestDTO;
 import com.example.banking.system.dto.request.RegisterRequestDTO;
 import com.example.banking.system.dto.response.LoginResponseDTO;
 import com.example.banking.system.dto.response.RegisterResponseDTO;
+import com.example.banking.system.exception.InactiveAccountException;
 import com.example.banking.system.model.Account;
 import com.example.banking.system.model.User;
 import com.example.banking.system.model.enums.Status;
@@ -44,6 +45,15 @@ public class AuthService {
     }
 
     public LoginResponseDTO login(LoginRequestDTO request) {
+        // Step 1 — Check if user exists
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("Invalid credentials."));
+
+        // Step 2 — Check if user is active BEFORE authenticating
+        if (user.getStatus() == Status.INACTIVE) {
+            throw new InactiveAccountException("Your account has been deactivated. Please contact support.");
+        }
+
         // Spring Security handles credential validation here
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(

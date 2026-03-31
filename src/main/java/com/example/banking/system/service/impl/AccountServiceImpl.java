@@ -113,6 +113,15 @@ public class AccountServiceImpl implements IAccountService {
     @Override
     public AccountResponseDTO activateAccount(Long id) {
         Account account = accountRepository.findById(id).orElseThrow(() -> new RuntimeException("Account not found"));
+
+        // Guard — cannot activate account if owner is deactivated
+        if (account.getUser().getStatus() == Status.INACTIVE) {
+            throw new BadRequestException(
+                    String.format("Cannot activate account '%s' because the owner '%s' is deactivated.",
+                            account.getAccountNumber(), account.getUser().getUsername())
+            );
+        }
+
         if(account.getStatus() == Status.ACTIVE) {
             throw new BadRequestException(messageHandler.get("error.account.already_active"));
         }

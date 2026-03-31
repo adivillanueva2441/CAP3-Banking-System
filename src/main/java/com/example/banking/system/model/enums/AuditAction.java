@@ -5,6 +5,7 @@ public enum AuditAction {
     LOGIN_SUCCESS,
     LOGIN_FAILED_INVALID_PASSWORD,
     LOGIN_FAILED_USER_NOT_FOUND,
+    LOGIN_FAILED_INACTIVE_ACCOUNT,
     LOGOUT,
 
     // User Management
