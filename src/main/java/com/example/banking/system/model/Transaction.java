@@ -18,7 +18,7 @@ public class Transaction {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "sender_account_id", nullable = false)
+    @JoinColumn(name = "sender_account_id")
     private Account senderAccount;
 
     @ManyToOne

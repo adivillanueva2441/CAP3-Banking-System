@@ -1,7 +1,9 @@
 package com.example.banking.system.controller;
 
+import com.example.banking.system.dto.request.DepositRequestDTO;
 import com.example.banking.system.dto.response.AccountResponseDTO;
 import com.example.banking.system.service.IAccountService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -59,5 +61,13 @@ public class AccountController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<AccountResponseDTO> applyForSavingsAccount() {
         return ResponseEntity.ok(accountService.applyForSavingsAccount());
+    }
+
+    @PatchMapping("/{id}/deposit")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<AccountResponseDTO> depositBalance(
+            @PathVariable Long id,
+            @Valid @RequestBody DepositRequestDTO depositRequestDTO) {
+        return ResponseEntity.ok(accountService.depositBalance(id, depositRequestDTO));
     }
 }

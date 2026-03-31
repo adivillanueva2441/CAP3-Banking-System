@@ -1,15 +1,16 @@
 package com.example.banking.system.service.impl;
 
+import com.example.banking.system.dto.request.DepositRequestDTO;
 import com.example.banking.system.dto.response.AccountResponseDTO;
 import com.example.banking.system.exception.BadRequestException;
 import com.example.banking.system.exception.ResourceNotFoundException;
 import com.example.banking.system.exception.UnauthorizedException;
 import com.example.banking.system.model.Account;
+import com.example.banking.system.model.Transaction;
 import com.example.banking.system.model.User;
-import com.example.banking.system.model.enums.AccountType;
-import com.example.banking.system.model.enums.AuditAction;
-import com.example.banking.system.model.enums.Status;
+import com.example.banking.system.model.enums.*;
 import com.example.banking.system.repository.AccountRepository;
+import com.example.banking.system.repository.TransactionRepository;
 import com.example.banking.system.repository.UserRepository;
 import com.example.banking.system.service.IAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class AccountServiceImpl implements IAccountService {
@@ -30,6 +32,8 @@ public class AccountServiceImpl implements IAccountService {
     private MessageHandlerService messageHandler;
     @Autowired
     private AuditLogService auditLogService;
+    @Autowired
+    private TransactionRepository transactionRepository;
 
     private String currentUsername() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
@@ -173,6 +177,44 @@ public class AccountServiceImpl implements IAccountService {
 
         return new AccountResponseDTO(account);
     }
+
+    @Override
+    public AccountResponseDTO depositBalance(Long id, DepositRequestDTO depositRequestDTO){
+        String username = Objects.requireNonNull(SecurityContextHolder
+                .getContext().getAuthentication()).getName();
+
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(messageHandler.get("error.user.not_found")));
+
+        if (!account.getUser().getUsername().equals(username)) {
+            throw new UnauthorizedException(messageHandler.get("error.deposit.unauthorized"));
+        }
+
+        if (account.getStatus() != Status.ACTIVE) {
+            throw new BadRequestException(messageHandler.get("error.deposit.inactive"));
+        }
+
+        if (depositRequestDTO.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException(messageHandler.get("error.deposit.invalid_amount"));
+        }
+
+        account.setBalance(account.getBalance().add(depositRequestDTO.getAmount()));
+        accountRepository.save(account);
+
+        // Record the deposit as a transaction
+        Transaction transaction = new Transaction();
+        transaction.setSenderAccount(null);
+        transaction.setReceiverAccount(account);
+        transaction.setTransactionType(TransactionType.DEPOSIT);
+        transaction.setTransactionCost(BigDecimal.ZERO);
+        transaction.setAmount(depositRequestDTO.getAmount());
+        transaction.setTransactionDescription("Deposit");
+        transaction.setStatus(TransactionStatus.SUCCESS);
+        transactionRepository.save(transaction);
+
+        return new AccountResponseDTO(account);
+    }
+
 
     @Override
     public String generateAccountNumber() {

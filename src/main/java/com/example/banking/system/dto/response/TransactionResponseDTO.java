@@ -19,7 +19,9 @@ public class TransactionResponseDTO {
 
     public TransactionResponseDTO(Transaction transaction) {
         this.id = transaction.getId();
-        this.senderAccountNumber = transaction.getSenderAccount().getAccountNumber();
+        this.senderAccountNumber = transaction.getSenderAccount() != null
+                ? transaction.getSenderAccount().getAccountNumber()
+                : null;
         this.receiverAccountNumber = transaction.getReceiverAccount().getAccountNumber();
         this.transactionType = transaction.getTransactionType().name();
         this.transactionCost = transaction.getTransactionCost();

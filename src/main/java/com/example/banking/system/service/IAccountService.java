@@ -1,5 +1,6 @@
 package com.example.banking.system.service;
 
+import com.example.banking.system.dto.request.DepositRequestDTO;
 import com.example.banking.system.dto.response.AccountResponseDTO;
 
 import java.util.List;
@@ -13,6 +14,7 @@ public interface IAccountService {
     List<AccountResponseDTO> getMyAccounts();
     AccountResponseDTO applyForSavingsAccount();
     String generateAccountNumber();
+    AccountResponseDTO depositBalance(Long id, DepositRequestDTO depositRequestDTO);
 
 
 }
